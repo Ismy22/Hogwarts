@@ -1190,8 +1190,6 @@ public class PanelPrincipalCasasController implements Initializable {
             String pass = labelPass.getText();
             String casa = comprobarInicioSesionEstudiantes(dni, pass);
             int id_estudiante = obtner_id_estudiante(dni);
-            System.out.println(id_estudiante);
-            System.out.println(casa);
 
             switch (casa) {
 
@@ -1716,7 +1714,7 @@ public class PanelPrincipalCasasController implements Initializable {
 
                 String nombre = _tfNombreEstudiante.getText();
                 String apellidos = _tfApellidosEstudiante.getText();
-                String dni=_tfDniEstudiante.getText();
+                String dni = _tfDniEstudiante.getText();
                 int telefono = Integer.parseInt(_tfTelefonoEstudiante.getText());
                 String fecha_nac = _tfFechaNacEstudiante.getText();
                 String correo = _tfEmailEstudiante.getText();
@@ -2073,9 +2071,9 @@ public class PanelPrincipalCasasController implements Initializable {
         _cbCursos.setValue("Primero");
         vaciarPanelProfes();
         _panelCursosProfes.setVisible(true);
-        int id_profesor = id_profesor_Con_dni(dni);
+        int id_profesor = obtener_id_profesor(dni);
         _tablaProfesor_cursos.getItems().clear();
-        int id_asigProf = id_profesor_obtener_asifprof(id_profesor);
+        int id_asigProf = obtener_id_asigProf_por_idProfesor(id_profesor);
         rellenar_tabla(id_asigProf);
         Cambiar_recordadoraProfesores(id_profesor);
     }
@@ -2086,6 +2084,7 @@ public class PanelPrincipalCasasController implements Initializable {
      */
     @FXML
     public void cambiar_asistencia() {
+        int id_profesor = obtener_id_profesor(pruebaInicio.getText());
         _comboP_AsistenciaCursos.getItems().clear();
         _comboP_AsistenciaCasa.getItems().clear();
         _comboP_AsistenciaCursos.getItems().addAll("Primero", "Segundo", "Tercero", "Cuarto", "Quinto", "Sexto", "Séptimo");
@@ -2094,6 +2093,9 @@ public class PanelPrincipalCasasController implements Initializable {
         _tablaP_asistencia.getItems().clear();
         panelProfesores.setVisible(true);
         _panelAsistencia.setVisible(true);
+        _tablaP_asistencia1.getItems().clear();
+        _tablaP_asistencia1.getItems().clear();
+        rellenar_tabla_asistencia(id_profesor);
 
     }
 
@@ -2498,11 +2500,14 @@ public class PanelPrincipalCasasController implements Initializable {
 
         _comboP_AsistenciaCursos1.valueProperty().addListener((ov, p1, p2) -> {
             if (_comboP_AsistenciaCasa1.getValue() == null) {
-
+                _tablaP_asistencia1.getItems().clear();
+                _tablaP_asistencia.getItems().clear();
                 rellenar_tabla_asistencia_historial(id_profesor);
 
             } else {
                 String casa = _comboP_AsistenciaCasa1.getValue().toString();
+                _tablaP_asistencia1.getItems().clear();
+                _tablaP_asistencia.getItems().clear();
                 rellenar_tabla_asistencia_casaCurso_historial(id_asigProf, p2, casa);
             }
 
@@ -2514,11 +2519,14 @@ public class PanelPrincipalCasasController implements Initializable {
 
         _comboP_AsistenciaCasa1.valueProperty().addListener((ov, p1, p2) -> {
             if (_comboP_AsistenciaCursos1.getValue() == null) {
-
+                _tablaP_asistencia1.getItems().clear();
+                _tablaP_asistencia.getItems().clear();
                 rellenar_tabla_asistencia_historial(id_asigProf);
 
             } else {
                 String curso = _comboP_AsistenciaCursos1.getValue().toString();
+                _tablaP_asistencia1.getItems().clear();
+                _tablaP_asistencia.getItems().clear();
                 rellenar_tabla_asistencia_casaCurso_historial(id_asigProf, curso, p2);
             }
 
@@ -2785,28 +2793,27 @@ public class PanelPrincipalCasasController implements Initializable {
 
     }
 
-    public int id_profesor_obtener_asifprof(int id_profesor) {
-        try {
-            PreparedStatement pst = conn.prepareStatement("SELECT * FROM asigProf where id_profesor= ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-            pst.setInt(1, id_profesor);
-            ResultSet resultado = pst.executeQuery();
-            if (!resultado.first()) {
-
-                Jopane("No se han encontrado datos al obtener el id asigprof por el id profesor", "Error");
-                return -1;
-            } else {
-                int id_asigProf = resultado.getInt("id_asigProf");
-                return id_asigProf;
-
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(PanelPrincipalCasasController.class
-                    .getName()).log(Level.SEVERE, null, ex);
-            return -1;
-        }
-
-    }
-
+//    public int id_profesor_obtener_asifprof(int id_profesor) {
+//        try {
+//            PreparedStatement pst = conn.prepareStatement("SELECT * FROM asigProf where id_profesor= ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+//            pst.setInt(1, id_profesor);
+//            ResultSet resultado = pst.executeQuery();
+//            if (!resultado.first()) {
+//
+//                Jopane("No se han encontrado datos al obtener el id asigprof por el id profesor", "Error");
+//                return -1;
+//            } else {
+//                int id_asigProf = resultado.getInt("id_asigProf");
+//                return id_asigProf;
+//
+//            }
+//        } catch (SQLException ex) {
+//            Logger.getLogger(PanelPrincipalCasasController.class
+//                    .getName()).log(Level.SEVERE, null, ex);
+//            return -1;
+//        }
+//
+//    }
     /**
      *
      * @param id_asigProf de tipo int autoincremental identifica a un profesor
@@ -3174,7 +3181,10 @@ public class PanelPrincipalCasasController implements Initializable {
      * @link com.agenda.agenda_v1.class#Alumnos_asistencia_objeto
      */
     public ObservableList<Alumnos_asistencia_objeto> rellenar_tabla_asistencia(int id_profesor) {
+        id_profesor = obtener_id_profesor(pruebaInicio.getText());
         int id_asigProf = obtener_id_asigProf_por_idProfesor(id_profesor);
+        ArrayList<Integer> ids = new ArrayList();
+        System.out.println(id_asigProf);
         _tablaP_asistencia.getItems().clear();
         ObservableList<Alumnos_asistencia_objeto> obs = FXCollections.observableArrayList();
         _columP_nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -3186,22 +3196,26 @@ public class PanelPrincipalCasasController implements Initializable {
         String nombre = null;
         Alumnos_asistencia_objeto p = null;
         try {
-            ResultSet rs = datos_asistencia(id_asigProf);
+            System.out.println(id_asigProf);
+            ResultSet rs = datosAlumnos_para_asistencia_por_profesor(id_asigProf);
             while (rs.next()) {
                 int id = rs.getInt("id_estudiante");
-                ResultSet rst = datosAlumnos_porId(id);
-                while (rst.next()) {
+                ids.add(id);
+            }
+
+            for (int i = 0; i < ids.size(); i++) {
+                ResultSet rst = datosAlumnos_porId(ids.get(i));
+                if (rst.first()) {
                     nombre = rst.getString("nombre");
                     String apellidos = rst.getString("apellidos");
                     String dni = rst.getString("dni");
 
-                    p = new Alumnos_asistencia_objeto(nombre, apellidos, dni, "presente");
+                    p = new Alumnos_asistencia_objeto(nombre, apellidos, dni);
                     obs.add(p);
                 }
 
-                _tablaP_asistencia.getItems().addAll(p);
-
             }
+            _tablaP_asistencia.getItems().addAll(obs);
 
         } catch (SQLException ex) {
             Logger.getLogger(PanelPrincipalCasasController.class
@@ -3220,6 +3234,7 @@ public class PanelPrincipalCasasController implements Initializable {
     public void rellenar_tabla_asistencia_casaCurso(int id_asigProf, String curso, String casa) {
         Alumnos_asistencia_objeto p = null;
         _tablaP_asistencia.getItems().clear();
+        ArrayList<Integer> ids = new ArrayList();
         try {
             ObservableList<Alumnos_asistencia_objeto> obs = FXCollections.observableArrayList();
             _columP_nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -3239,8 +3254,13 @@ public class PanelPrincipalCasasController implements Initializable {
 
                 while (rs.next()) {
                     int id = rs.getInt("id_estudiante");
-                    ResultSet rst = datosAlumnos_porId(id);
-                    while (rst.next()) {
+                    ids.add(id);
+                }
+
+                for (int i = 0; i < ids.size(); i++) {
+                    ResultSet rst = datosAlumnos_porId(ids.get(i));
+
+                    if (!rst.first()) {
                         String nombre = rst.getString("nombre");
                         String apellidos = rst.getString("apellidos");
                         String dni = rst.getString("dni");
@@ -3248,9 +3268,10 @@ public class PanelPrincipalCasasController implements Initializable {
                         obs.add(p);
                     }
 
-                    _tablaP_asistencia.getItems().addAll(p);
-
                 }
+                _tablaP_asistencia.getItems().clear();
+                _tablaP_asistencia.getItems().addAll(obs);
+
             }
 
         } catch (SQLException ex) {
@@ -3266,7 +3287,7 @@ public class PanelPrincipalCasasController implements Initializable {
         String dni = pruebaInicio.getText();
         int id_profesor = obtener_id_profesor(dni);
         // ejecutar cuando se haga clic en el ratón??
-        int id_asigProf = id_profesor_obtener_asifprof(id_profesor);
+        int id_asigProf = obtener_id_asigProf_por_idProfesor(id_profesor);
 
         _cbTareas_cursos.valueProperty().addListener((ov, p1, p2) -> {
             if (_cbTarea_casa.getValue() == null) {
@@ -3281,7 +3302,7 @@ public class PanelPrincipalCasasController implements Initializable {
         String dni = pruebaInicio.getText();
         int id_profesor = obtener_id_profesor(dni);
 
-        int id_asigProf = id_profesor_obtener_asifprof(id_profesor);
+        int id_asigProf = obtener_id_asigProf_por_idProfesor(id_profesor);
 
         _cbTarea_casa.valueProperty().addListener((ov, p1, p2) -> {
             if (_cbTareas_cursos.getValue() == null) {
@@ -3550,7 +3571,7 @@ public class PanelPrincipalCasasController implements Initializable {
     public ResultSet datos_asistencia(int id_asigProf) {
 
         try {
-            PreparedStatement pst = conn.prepareStatement("SELECT * from asistencia WHERE id_asigProf= ?",
+            PreparedStatement pst = conn.prepareStatement("SELECT * FROM asistencia WHERE id_asigProf= ?",
                     ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
             pst.setInt(1, id_asigProf);
             ResultSet resultado = pst.executeQuery();
@@ -3569,6 +3590,22 @@ public class PanelPrincipalCasasController implements Initializable {
             ResultSet rs;
             PreparedStatement pst = conn.prepareStatement("SELECT * FROM estudiantes WHERE id_estudiante=?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
             pst.setInt(1, id_estudiante);
+            rs = pst.executeQuery();
+            return rs;
+
+        } catch (SQLException ex) {
+            Logger.getLogger(PanelPrincipalCasasController.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+
+    }
+    
+    public ResultSet datosAlumnos_para_asistencia_por_profesor(int id_asigprof) {
+        try {
+            ResultSet rs;
+            PreparedStatement pst = conn.prepareStatement("SELECT * FROM asigEstu WHERE id_asigProf=?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            pst.setInt(1, id_asigprof);
             rs = pst.executeQuery();
             return rs;
 
@@ -4098,6 +4135,7 @@ public class PanelPrincipalCasasController implements Initializable {
     public void rellenar_tabla_asistencia_casaCurso_historial(int id_asigProf, String curso, String casa) {
         Alumnos_asistencia_objeto p = null;
         _tablaP_asistencia1.getItems().clear();
+        ArrayList<Integer> ids = new ArrayList<Integer>();
         try {
             ObservableList<Alumnos_asistencia_objeto> obs = FXCollections.observableArrayList();
             _columP_nombre1.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -4110,14 +4148,22 @@ public class PanelPrincipalCasasController implements Initializable {
             casa = _comboP_AsistenciaCasa1.getValue().toString();
 
             if (curso == null || casa == null) {
+                _tablaP_asistencia1.getItems().clear();
                 rellenar_tabla_asistencia_historial(id_asigProf);
             } else {
                 ResultSet rs = alumnos_segun_curso_asistencia_historial(id_asigProf);
 
                 while (rs.next()) {
                     int id_estudiante = rs.getInt("id_estudiante");
-                    ResultSet rst = datosAlumnos_porId_historial(id_estudiante);
-                    while (rst.next()) {
+                    ids.add(id_estudiante);
+                }
+
+                for (int i = 0; i < ids.size(); i++) {
+
+                    ResultSet rst = datosAlumnos_porId_historial(ids.get(i));
+                    int id_estudiante = ids.get(i);
+
+                    if (rst.first()) {
                         String nombre = obtenerNombreAlumno_porID(id_estudiante);
                         String apellidos = obtenerApellidoAlumno_porID(id_estudiante);
                         String dni = obtner_dni_estudiante(id_estudiante);
@@ -4128,9 +4174,10 @@ public class PanelPrincipalCasasController implements Initializable {
                         p = new Alumnos_asistencia_objeto(nombre, apellidos, dni, estado, fecha);
                         obs.add(p);
                     }
-
                     _tablaP_asistencia1.getItems().addAll(obs);
+
                 }
+
             }
 
         } catch (SQLException ex) {
@@ -4142,7 +4189,9 @@ public class PanelPrincipalCasasController implements Initializable {
     //metodo para  rellenar tabla asistencia alumnos historial (FENIX)
 
     public ObservableList<Alumnos_asistencia_objeto> rellenar_tabla_asistencia_historial(int id_profesor) {
+        id_profesor = obtener_id_profesor(pruebaInicio.getText());
         int id_asigProf = obtener_id_asigProf_por_idProfesor(id_profesor);
+
         _tablaP_asistencia1.getItems().clear();
         ObservableList<Alumnos_asistencia_objeto> obs = FXCollections.observableArrayList();
         _columP_nombre1.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -4153,12 +4202,19 @@ public class PanelPrincipalCasasController implements Initializable {
 
         String nombre = null;
         Alumnos_asistencia_objeto x = null;
+        ArrayList<Integer> ids = new ArrayList<Integer>();
         try {
             ResultSet rs = datos_asistencia(id_asigProf);
             while (rs.next()) {
                 int id = rs.getInt("id_estudiante");
-                ResultSet rst = datosAlumnos_porId_historial(id);
-                while (rst.next()) {
+                ids.add(id);
+
+            }
+            for (int i = 0; i < ids.size(); i++) {
+
+                ResultSet rst = datosAlumnos_porId_historial(ids.get(i));
+
+                if (rst.first()) {
                     int id_estudiante = rst.getInt("id_estudiante");
                     nombre = obtenerNombreAlumno_porID(id_estudiante);
                     String apellidos = obtenerApellidoAlumno_porID(id_estudiante);
@@ -4170,8 +4226,8 @@ public class PanelPrincipalCasasController implements Initializable {
 
                     x = new Alumnos_asistencia_objeto(nombre, apellidos, dni, estado, fecha);
                     obs.add(x);
-                }
 
+                }
                 _tablaP_asistencia1.getItems().addAll(obs);
 
             }
@@ -4424,7 +4480,10 @@ public class PanelPrincipalCasasController implements Initializable {
      */
     @FXML
     private void cambiarPanel_historial_asistencia(MouseEvent event) {
+        int id_profesor = obtener_id_profesor(pruebaInicio.getText());
         vaciarPanelTodo();
+        _tablaP_asistencia1.getItems().clear();
+        rellenar_tabla_asistencia_historial(id_profesor);
         panelProfesores.setVisible(true);
         _comboP_AsistenciaCursos1.getItems().addAll("Primero", "Segundo", "Tercero", "Cuarto", "Quinto", "Sexto", "Séptimo");
         _comboP_AsistenciaCasa1.getItems().addAll("Gryffindor", "Slytherin", "Hafflepuff", "Ravenclaw");
